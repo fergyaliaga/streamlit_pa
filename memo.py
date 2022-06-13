@@ -10,4 +10,4 @@ def download_data():
    urllib.request.urlretrieve(url,filename)
    df=pd.read_csv('datos_horarios.csv')
    return df
-download_data()
+st.dataframe(download_data())
