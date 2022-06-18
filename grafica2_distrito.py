@@ -152,7 +152,7 @@ df_sel=data_by_year[(data_by_year.ESTACION.isin(selec_ditrit))]
 
 
 st.header('Gráfico de líneas')
-datos=df_selected.groupby(['MES']).agg({"PM 10": 'mean', "PM 2.5": 'mean', "SO2": 'mean', "NO2": 'mean', "O3": 'mean', "CO": 'mean'})
+datos=df_sel.groupby(['MES']).agg({"PM 10": 'mean', "PM 2.5": 'mean', "SO2": 'mean', "NO2": 'mean', "O3": 'mean', "CO": 'mean'})
 #datos.reset_index(inplace=True)
 #c=alt.Chart(datos, title='DISTRITO:'+" "+' '.join(selected_district)).mark_line().encode(x='MES', y='ppm:Q')
 data = datos.reset_index().melt('MES')
@@ -176,7 +176,7 @@ def createChart():
 	cont_select, cont_color_condition = getSelection()
 	make_selector = (alt.Chart(data).mark_circle(size=200).encode(y=alt.Y("contaminante:N", axis=alt.Axis(title="Elija contaminante", titleFontSize=15)),color=cont_color_condition,).add_selection(cont_select))
 	base = getBaseChart()
-	highlight_cont = (base.mark_line(strokeWidth=2).add_selection(cont_select).encode(color=cont_color_condition)).properties(title='DISTRITO:'+" "+' '.join(selected_district))
+	highlight_cont = (base.mark_line(strokeWidth=2).add_selection(cont_select).encode(color=cont_color_condition)).properties(title='DISTRITO:'+" "+' '.join(selec_ditrit))
 	return base, make_selector, highlight_cont, cont_select
 
 def createTooltip(base, cont_select):
