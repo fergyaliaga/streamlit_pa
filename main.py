@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import altair as alt
 import base64
-
+import urllib.request
 
 #header= st.container()
 st.title('Contaminantes del aire en Lima Metropolitana')
@@ -25,9 +25,44 @@ selected_year=st.sidebar.selectbox('Año', list(reversed(range(2010,2021))))
 #dataset=st.container()
 st.header("Dataset SENAMHI")
 
+'''
+@st.experimental_memo
+def download_data():
+	url='http://server01.labs.org.pe:2005/datos_horarios_contaminacion_lima.csv'
+	filename='datos_horarios_contaminacion_lima.csv'
+	urllib.request.urlretrieve(url, filename)
+	df=pd.read_csv('datos_horarios_contaminacion_lima.csv')
+	return df
+
+df=download_data()
+st.dataframe(df)
+df=df.astype({'ANO':'str'})
+df['PM 10'] = pd.to_numeric(df['PM 10'])
+df['PM 2.5'] = pd.to_numeric(df['PM 2.5'])
+df['SO2'] = pd.to_numeric(df['SO2'])
+df['NO2'] = pd.to_numeric(df['NO2'])
+df['O3'] = pd.to_numeric(df['O3'])
+df['CO'] = pd.to_numeric(df['CO'])
+
+
+	
+def retrieve_data(df, year):
+	df=df.astype({'ANO':'str'})
+	df['PM 10'] = pd.to_numeric(df['PM 10'])
+	df['PM 2.5'] = pd.to_numeric(df['PM 2.5'])
+	df['SO2'] = pd.to_numeric(df['SO2'])
+	df['NO2'] = pd.to_numeric(df['NO2'])
+	df['O3'] = pd.to_numeric(df['O3'])
+	df['CO'] = pd.to_numeric(df['CO'])
+	grouped = df.groupby(df.ANO)
+	df_year = grouped.get_group(year)
+	return df_year
+
+data_by_year=retrieve_data(dataframe, selected_year)
+'''
+
 def load_data(year):
 	df=pd.read_csv('datos_horarios_contaminacion_lima.csv')
-	#df_n=df.replace(r'^\s*$', np.nan, regex=True)
 	df=df.astype({'ANO':'str'})
 	df['PM 10'] = pd.to_numeric(df['PM 10'])
 	df['PM 2.5'] = pd.to_numeric(df['PM 2.5'])
@@ -81,9 +116,51 @@ if st.sidebar.button("CSV completo"):
 if st.button('Gráfico interactivo'):
 	st.header('Gráfico de líneas')
 	datos=df_selected.groupby(['MES']).agg({"PM 10": 'mean', "PM 2.5": 'mean', "SO2": 'mean', "NO2": 'mean', "O3": 'mean', "CO": 'mean'})
-	st.line_chart(datos)
-	#line_chart = alt.Chart(datos, title='probando ando').mark_line().encode(x='MES', y='NO2')
-	#st.altair_chart(line_chart, use_container_width=True)
+	#datos.reset_index(inplace=True)
+	#c=alt.Chart(datos, title='DISTRITO:'+" "+' '.join(selected_district)).mark_line().encode(x='MES', y='ppm:Q')
+	data = datos.reset_index().melt('MES')
+	data.rename(columns={'variable':'contaminante', 'value':'ppm'}, inplace=True)
+	c=alt.Chart(data, title='DISTRITO:'+" "+' '.join(selected_district)).mark_line().encode(
+		x='MES',
+		y='ppm',
+    color='contaminante')
+	st.altair_chart(c, use_container_width=True)
+
+	st.dataframe(data)
+
+	contaminantes=['PM 10', 'PM 2.5', 'SO2', 'NO2', 'O3', 'CO']
+	def getBaseChart():
+		#base=alt.Chart(data).mark_line().encode(x='MES',y='ppm',color='contaminante').properties(width=500, height=400)
+		base = (alt.Chart(data).encode(x=alt.X("MES:T",axis=alt.Axis(title="Mes")),y=alt.Y("ppm:Q", axis=alt.Axis(title="Concentración (ppm)")),).properties(width=500, height=400))
+		return base
+
+	def getSelection():
+		cont_select = alt.selection_multi(fields=["contaminante"], name="Contaminante")
+		cont_color_condition = alt.condition(cont_select, alt.Color("contaminante:N", legend=None), alt.value("lightgrey"))
+		return cont_select, cont_color_condition
+
+	def createChart():
+		cont_select, cont_color_condition = getSelection()
+		make_selector = (alt.Chart(data).mark_circle(size=200).encode(y=alt.Y("contaminante:N", axis=alt.Axis(title="Elija contaminante", titleFontSize=15)),color=cont_color_condition,).add_selection(cont_select))
+		base = getBaseChart()
+		highlight_cont = (base.mark_line(strokeWidth=2).add_selection(cont_select).encode(color=cont_color_condition)).properties(title='DISTRITO:'+" "+' '.join(selected_district))
+		return base, make_selector, highlight_cont, cont_select
+
+	def createTooltip(base, cont_select):
+		nearest = alt.selection(type="single", nearest=True, on="mouseover", fields=["MES"], empty="none")
+		selectors = (alt.Chart(data).mark_point().encode(x="MES:T",opacity=alt.value(0)).add_selection(nearest))
+		points = base.mark_point(size=5, dy=-10).encode(opacity=alt.condition(nearest, alt.value(1), alt.value(0))).transform_filter(cont_select)
+
+		tooltip_text = base.mark_text(align="left",dx=-60,dy=-15,fontSize=15,fontWeight="bold",lineBreak = "\n",).encode(text=alt.condition(nearest, alt.Text("ppm:Q", format=".2f"), alt.value(" "),),).transform_filter(cont_select)
+		rules = (alt.Chart(data).mark_rule(color="white", strokeWidth=1).encode(x="MES:T",).transform_filter(nearest))
+		return selectors, rules, points, tooltip_text
+
+	base, make_selector, highlight_cont, cont_select  = createChart()
+	selectors, rules, points, tooltip_text  = createTooltip(base, cont_select)
+
+	make_selector | alt.layer(highlight_cont, selectors, points,rules, tooltip_text)
+
+
 
 
 
