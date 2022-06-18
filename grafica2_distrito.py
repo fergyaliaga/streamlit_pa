@@ -104,13 +104,6 @@ if st.button('Gráfico interactivo'):
 	#c=alt.Chart(datos, title='DISTRITO:'+" "+' '.join(selected_district)).mark_line().encode(x='MES', y='ppm:Q')
 	data = datos.reset_index().melt('MES')
 	data.rename(columns={'variable':'contaminante', 'value':'ppm'}, inplace=True)
-	c=alt.Chart(data, title='DISTRITO:'+" "+' '.join(selected_district)).mark_line().encode(
-		x='MES',
-		y='ppm',
-    color='contaminante')
-	st.altair_chart(c, use_container_width=True)
-
-	st.dataframe(data)
 
 	contaminantes=['PM 10', 'PM 2.5', 'SO2', 'NO2', 'O3', 'CO']
 	def getBaseChart():
@@ -166,13 +159,9 @@ if anios:
 			tempYear+=1
 		data = dataDist.rename(columns = {'YEAR': 'index'}).set_index('index')
 		st.line_chart(data)
-
-
-
 		
 df = download_data()		
 		
-
 lsta_conta=['PM 10', 'PM 2.5', 'SO2', 'NO2', 'O3', 'CO']
 distrits_names = pd.unique(df["ESTACION"])
 selec_ditrit = st.sidebar.selectbox('Evaluación de contaminates por Distrito', distrits_names)
