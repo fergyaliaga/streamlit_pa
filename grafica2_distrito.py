@@ -89,10 +89,12 @@ if st.sidebar.button("CSV completo"):
 	st.write('Dimensiones: ' + str(df.shape[0]) + ' filas y ' + str(df.shape[1]) + ' columnas')
 	st.dataframe(df)
 	
-anios = st.button('Gráfico entre años')
+st.header('Evaluación de distritos por contaminante')	
 
 minYear = st.selectbox('Desde', list(range(2010,2021)))
 maxYear = st.selectbox('Hasta', list(reversed(range(2010,2021))))
+
+anios = st.button('Gráfico entre años')
 
 if anios:
 	st.header('Gráfico de Contaminantes')
@@ -138,7 +140,7 @@ cont_distrito = distrito.iloc[:,6:].set_index(index)
 fecha_i = index[0]
 fecha_f = index[-1]
 
-st.header('Evaluación de contaminates por Distrito')
+st.header('Evaluación de contaminates por distrito')
 st.subheader("Distrito seleccionado:")
 st.subheader(str(selec_ditrit))
 st.markdown(f"Periodo de muestreo: desde  {fecha_i} hasta {fecha_f}") 
